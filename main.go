@@ -3,13 +3,42 @@ package main
 import (
     "github.com/hajimehoshi/ebiten/v2"
     "github.com/hajimehoshi/ebiten/v2/ebitenutil"
+    "github.com/hajimehoshi/ebiten/v2/inpututil"
+    "github.com/hajimehoshi/ebiten/v2/audio"
+    "github.com/hajimehoshi/ebiten/v2/audio/vorbis"
+    "github.com/lm201111/sadam-jumper/internal"
     "log"
     "math/rand"
+    "os"
     "time"
-    "sadam-jumper/internal"
-    "github.com/hajimehoshi/ebiten/v2/inpututil"
+    "image/color"
 )
 
+var (
+    audioContext *audio.Context
+    bgmPlayer    *audio.Player
+)
+
+// Инициализация фоновой музыки
+func initAudio() {
+    var err error
+    audioContext = audio.NewContext(44100)
+    f, err := os.Open("assets/music.ogg")
+    if err != nil {
+        log.Fatal(err)
+    }
+    d, err := vorbis.Decode(audioContext, f)
+    if err != nil {
+        log.Fatal(err)
+    }
+    bgmPlayer, err = audio.NewPlayer(audioContext, d)
+    if err != nil {
+        log.Fatal(err)
+    }
+    bgmPlayer.Play()
+}
+
+// Основная структура игры
 type Game struct {
     Player    *internal.Player
     Obstacles []*internal.Obstacle
@@ -17,6 +46,7 @@ type Game struct {
     Tick      int
 }
 
+// Создание новой игры
 func NewGame() *Game {
     img := ebiten.NewImage(32, 32)
     img.Fill(color.RGBA{0xff, 0, 0, 0xff}) // красный самолет
@@ -26,24 +56,25 @@ func NewGame() *Game {
     }
 }
 
+// Логика игры
 func (g *Game) Update() error {
     g.Tick++
 
-    // Прыжок: пробел или тап
+    // Прыжок по пробелу или тапу
     if ebiten.IsKeyPressed(ebiten.KeySpace) || inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
         g.Player.Jump()
     }
 
     g.Player.Update()
 
-    // Добавление новых небоскребов каждые 120 тиков (~2 сек)
+    // Добавляем новые небоскребы каждые 120 тиков (~2 сек)
     if g.Tick%120 == 0 {
         g.Obstacles = append(g.Obstacles, internal.NewObstacle(640))
     }
 
     // Обновляем и удаляем старые
-    for i := 0; i < len(g.Obstacles); i++ {
-        g.Obstacles[i].Update()
+    for _, o := range g.Obstacles {
+        o.Update()
     }
 
     if len(g.Obstacles) > 0 && g.Obstacles[0].X+g.Obstacles[0].Width < 0 {
@@ -53,6 +84,7 @@ func (g *Game) Update() error {
     return nil
 }
 
+// Отрисовка экрана
 func (g *Game) Draw(screen *ebiten.Image) {
     screen.Fill(color.RGBA{0x88, 0xcc, 0xff, 0xff}) // фон
 
@@ -64,12 +96,15 @@ func (g *Game) Draw(screen *ebiten.Image) {
     ebitenutil.DebugPrint(screen, "Sadam Jumper")
 }
 
+// Размер окна
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
     return 640, 480
 }
 
+// main — запуск игры
 func main() {
     rand.Seed(time.Now().UnixNano())
+    initAudio() // запускаем музыку
     game := NewGame()
     ebiten.SetWindowSize(640, 480)
     ebiten.SetWindowTitle("Sadam Jumper")

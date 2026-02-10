@@ -2,6 +2,7 @@ package internal
 
 import (
     "github.com/hajimehoshi/ebiten/v2"
+	"image/color" 
     "math/rand"
 )
 
