@@ -31,7 +31,9 @@ func initAudio() {
 		log.Fatal(err)
 	}
 
-	bgmPlayer, err = audio.NewPlayer(audioContext, d)
+	loop := audio.NewInfiniteLoop(d, d.Length())
+
+	bgmPlayer, err = audio.NewPlayer(audioContext, loop)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -48,6 +50,11 @@ func main() {
 		log.Fatal(err)
 	}
 
+	explosionImg, _, err := ebitenutil.NewImageFromFile("assets/explosion.png")
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	skyscraperImg, _, err := ebitenutil.NewImageFromFile("assets/skyscraper.png")
 	if err != nil {
 		log.Fatal(err)
@@ -58,7 +65,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	game := internal.NewGame(planeImg, skyscraperImg, bgImg)
+	game := internal.NewGame(planeImg, explosionImg, skyscraperImg, bgImg)
 
 	ebiten.SetWindowSize(640, 480)
 	ebiten.SetWindowTitle("Sadam Jumper")
