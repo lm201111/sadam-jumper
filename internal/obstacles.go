@@ -1,35 +1,42 @@
 package internal
 
 import (
-    "github.com/hajimehoshi/ebiten/v2"
-	"image/color" 
-    "math/rand"
+	"github.com/hajimehoshi/ebiten/v2"
+	"image"
 )
 
 type Obstacle struct {
-    X, Y, Width, Height float64
+	X      float64
+	Y      float64
+	Img    *ebiten.Image
+	Width  int
+	Height int
+	Passed bool
 }
 
-const ObstacleSpeed = 3
+const ObstacleSpeed = 4
 
-func NewObstacle(x float64) *Obstacle {
-    height := float64(100 + rand.Intn(200)) // случайная высота
-    return &Obstacle{
-        X:      x,
-        Y:      480 - height,
-        Width:  50,
-        Height: height,
-    }
+func NewObstacle(img *ebiten.Image, x float64) *Obstacle {
+	w, h := img.Size()
+	return &Obstacle{
+		X:      x,
+		Y:      480 - float64(h),
+		Img:    img,
+		Width:  w,
+		Height: h,
+	}
 }
 
 func (o *Obstacle) Update() {
-    o.X -= ObstacleSpeed
+	o.X -= ObstacleSpeed
 }
 
 func (o *Obstacle) Draw(screen *ebiten.Image) {
-    rect := ebiten.NewImage(int(o.Width), int(o.Height))
-    rect.Fill(color.RGBA{0x33, 0x99, 0xff, 0xff})
-    opts := &ebiten.DrawImageOptions{}
-    opts.GeoM.Translate(o.X, o.Y)
-    screen.DrawImage(rect, opts)
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(o.X, o.Y)
+	screen.DrawImage(o.Img, op)
+}
+
+func (o *Obstacle) Rect() image.Rectangle {
+	return image.Rect(int(o.X), int(o.Y), int(o.X)+o.Width, int(o.Y)+o.Height)
 }

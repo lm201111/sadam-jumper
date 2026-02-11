@@ -1,49 +1,52 @@
 package internal
 
 import (
-    "github.com/hajimehoshi/ebiten/v2"
-    "image"
+	"github.com/hajimehoshi/ebiten/v2"
+	"image"
 )
 
 type Player struct {
-    X, Y      float64
-    VelocityY float64
-    Img       *ebiten.Image
+	X, Y      float64
+	VelocityY float64
+	Img       *ebiten.Image
+	Width     int
+	Height    int
 }
 
 const Gravity = 0.5
 const JumpStrength = -10
 
 func NewPlayer(img *ebiten.Image, startX, startY float64) *Player {
-    return &Player{
-        X:   startX,
-        Y:   startY,
-        Img: img,
-    }
+	w, h := img.Size()
+	return &Player{
+		X:      startX,
+		Y:      startY,
+		Img:    img,
+		Width:  w,
+		Height: h,
+	}
 }
 
 func (p *Player) Update() {
-    // Гравитация
-    p.VelocityY += Gravity
-    p.Y += p.VelocityY
+	p.VelocityY += Gravity
+	p.Y += p.VelocityY
 
-    // Пробегаем экран снизу
-    if p.Y > 480-32 { // assuming height 480, plane 32px
-        p.Y = 480 - 32
-        p.VelocityY = 0
-    }
+	if p.Y > 480-float64(p.Height) {
+		p.Y = 480 - float64(p.Height)
+		p.VelocityY = 0
+	}
 }
 
 func (p *Player) Jump() {
-    p.VelocityY = JumpStrength
+	p.VelocityY = JumpStrength
 }
 
 func (p *Player) Draw(screen *ebiten.Image) {
-    opts := &ebiten.DrawImageOptions{}
-    opts.GeoM.Translate(p.X, p.Y)
-    screen.DrawImage(p.Img, opts)
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(p.X, p.Y)
+	screen.DrawImage(p.Img, op)
 }
 
 func (p *Player) Rect() image.Rectangle {
-    return image.Rect(int(p.X), int(p.Y), int(p.X)+32, int(p.Y)+32)
+	return image.Rect(int(p.X), int(p.Y), int(p.X)+p.Width, int(p.Y)+p.Height)
 }
